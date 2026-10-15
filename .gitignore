@@ -1,0 +1,4 @@
+node_modules/
+# Riktiga loggar läggs aldrig i repot, bara den påhittade exempelfilen.
+*.xlsx
+!publik/exempel/Exempel_*.xlsx
