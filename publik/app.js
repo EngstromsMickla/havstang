@@ -1,10 +1,10 @@
 // Hävstångskartan: vyerna. All text läggs in med textContent, aldrig som HTML.
 // Loggen hålls bara i minnet. Inget sparas i webbläsaren och inget skickas någonstans.
 
-import { SKALA, FONSTER, SKIFTEN, VAL, forslag, motesordning, nastaNummer, idag } from "./regler.js";
+import { SKALA, FONSTER, SKIFTEN, VAL, REDIGERBARA, forslag, motesordning, nastaNummer, idag } from "./regler.js";
 import { lasArbetsbok, skrivArbetsbok, andringar, arAndrad, nyttFilnamn, Filfel } from "./xlsx.js";
 
-const VERSION = "prototyp v0.2";
+const VERSION = "prototyp v0.3";
 const env = { JSZip: window.JSZip, DOMParser: window.DOMParser, XMLSerializer: window.XMLSerializer };
 const MAX_STORLEK = 15 * 1024 * 1024;
 
@@ -141,23 +141,33 @@ function slappyta() {
 
 // ---------- Punktkortet ----------
 
+// Ett nytt inspel behöver bara det gruppen vet. Det sparas så snart något fält utöver källan är ifyllt.
 function nyPunkt() {
-  const pt = { nr: nastaNummer(S.punkter), titel: "", laset: "", vem: "", skifte: "", havstang: "", rackvidd: "", fonster: "", fonsterNu: "", forslag: "", val: "", nasta: "", lardom: "", kalla: "", uppdaterad: "", rad: null, original: null };
+  const pt = { nr: nastaNummer(S.punkter), titel: "", laset: "", vem: "", skifte: "", havstang: "", rackvidd: "", fonster: "", fonsterNu: "", forslag: "", val: "", nasta: "", lardom: "", kalla: `Inspel på mötet ${idag()}`, uppdaterad: "", rad: null, original: null };
   S.punkter.push(pt);
   return pt;
 }
+function harInnehall(pt) {
+  return REDIGERBARA.some((id) => id !== "kalla" && String(pt[id] || "").trim());
+}
+function rubrik(pt) {
+  if (String(pt.titel || "").trim()) return pt.titel;
+  const t = String(pt.laset || pt.fonster || pt.vem || pt.nasta || "").trim();
+  return t ? (t.length > 70 ? t.slice(0, 68) + " …" : t) : "(utan rubrik)";
+}
 function rensaTommaNya(undantag = null) {
   const fore = S.punkter.length;
-  S.punkter = S.punkter.filter((pt) => pt.original || pt.titel.trim() || pt === undantag);
+  S.punkter = S.punkter.filter((pt) => pt.original || harInnehall(pt) || pt === undantag);
   if (S.punkter.length !== fore) uppdateraStatus();
 }
 
 function forklaraForslag(pt) {
   const f = forslag(pt);
+  if (f && (!pt.havstang || !pt.fonsterNu || !pt.rackvidd)) return "Hävstång, räckvidd eller fönster är inte bedömda ännu, så mallens formel ger " + f + " tills ni fyller i dem.";
   if (f === "Ta upp nu") return "Fönstret är öppet, och både hävstång och räckvidd är medel eller hög.";
   if (f === "Bevaka fönster") return pt.fonsterNu === "Öppet nu" ? "Hög hävstång och öppet fönster, men räckvidden är låg." : "Hög hävstång, men fönstret är inte öppet nu.";
   if (f === "Parkera") return pt.fonsterNu === "Öppet nu" ? "Fönstret är öppet, men hävstången är låg, eller räckvidden låg utan hög hävstång." : "Hävstången är inte hög och fönstret är inte öppet nu.";
-  return "Ge punkten en rubrik så räknas förslaget.";
+  return "Förslaget räknas när inspelet har fått en rubrik.";
 }
 
 function kortFor(pt, { vidAndring } = {}) {
@@ -176,11 +186,11 @@ function kortFor(pt, { vidAndring } = {}) {
       pt.skifte ? h("span", { class: "tag", text: pt.skifte }) : null,
       forslagTag(pt),
       valTag(pt),
-      !pt.original ? h("span", { class: "tag andrad", text: "Ny punkt" }) : arAndrad(pt) ? h("span", { class: "tag andrad", text: "Ändrad på mötet" }) : null,
+      !pt.original ? h("span", { class: "tag andrad", text: "Nytt inspel" }) : arAndrad(pt) ? h("span", { class: "tag andrad", text: "Ändrad på mötet" }) : null,
     );
     byt(forslagsrad, h("span", { text: "Verktygets förslag:" }), forslagTag(pt), h("span", { text: forklaraForslag(pt) }));
-    fotInfo.textContent = pt.original ? (pt.uppdaterad ? `Senast uppdaterad i loggen ${pt.uppdaterad}` : "") + (arAndrad(pt) ? `. Får datumet ${idag()} när ni sparar.` : "") : `Läggs till i loggen som ${pt.nr} när ni sparar.`;
-    angra.textContent = pt.original ? "Ångra ändringarna i punkten" : "Ta bort den nya punkten";
+    fotInfo.textContent = pt.original ? (pt.uppdaterad ? `Senast uppdaterad i loggen ${pt.uppdaterad}` : "") + (arAndrad(pt) ? `. Får datumet ${idag()} när ni sparar.` : "") : (harInnehall(pt) ? `Läggs till i loggen som ${pt.nr} när ni sparar.` : "Inspelet sparas så snart något fält är ifyllt.");
+    angra.textContent = pt.original ? "Ångra ändringarna i punkten" : "Ta bort inspelet";
     angra.hidden = pt.original ? !arAndrad(pt) : false;
   }
   function andra(id, varde) {
@@ -217,7 +227,7 @@ function kortFor(pt, { vidAndring } = {}) {
     return el;
   }
 
-  const titel = h("textarea", { class: "titel", rows: 1, "aria-label": "Hävstångspunkt", placeholder: "Rubrik för hävstångspunkten" });
+  const titel = h("textarea", { class: "titel", rows: 1, "aria-label": "Hävstångspunkt", placeholder: pt.original ? "Rubrik för hävstångspunkten" : "Vad handlar inspelet om?" });
   titel.value = pt.titel;
   titel.addEventListener("keydown", (e) => { if (e.key === "Enter") e.preventDefault(); });
   titel.addEventListener("input", () => andra("titel", titel.value.replace(/\n/g, " ")));
@@ -228,6 +238,7 @@ function kortFor(pt, { vidAndring } = {}) {
   const kallaFalt = textfalt("kalla", "Källa", { rader: 2 });
 
   const kort = h("article", { class: "kort" },
+    !pt.original ? p("Nytt inspel. Fyll i det ni vet, resten kan vänta. Rubrik, bedömning och källa går att komplettera vid nästa möte eller direkt i Excel.", "note") : null,
     h("div", { class: "huvud" }, h("span", { class: "nr", text: pt.nr }), tags),
     falt.titel,
     h("div", { class: "tvaspalt" },
@@ -282,7 +293,8 @@ dialog.addEventListener("close", () => {
 dialog.addEventListener("click", (e) => { if (e.target === dialog) dialog.close(); });
 
 function oppnaPunkt(pt, { ny = false } = {}) {
-  document.getElementById("dialoglage").textContent = ny ? `Ny punkt · ${pt.nr}` : pt.nr;
+  document.getElementById("dialoglage").textContent = ny ? `Nytt inspel · ${pt.nr}` : pt.nr;
+  document.getElementById("stang").textContent = ny ? "Klar" : "Stäng";
   const kropp = document.getElementById("dialogkropp");
   kropp.replaceChildren(kortFor(pt, { vidAndring: (id) => { if (id === "borttagen") dialog.close(); } }));
   efterStang = () => render();
@@ -359,7 +371,7 @@ function bricka(pt) {
   const f = forslag(pt);
   const b = h("button", { type: "button", class: `bricka f-${FKLASS[f] || "parkera"}${pt.rackvidd === "Låg" ? " svar" : ""}`, title: pt.laset || pt.titel },
     h("span", { class: "nr", text: pt.nr + (pt.rackvidd === "Låg" ? " · svår att nå" : "") }),
-    h("span", { class: "namn", text: pt.titel || "(utan rubrik)" }),
+    h("span", { class: "namn", text: rubrik(pt) }),
     pt.val ? h("span", { class: "valtag" }, valTag(pt)) : null,
     arAndrad(pt) ? h("span", { class: "prick", title: "Ändrad på mötet" }, h("span", { class: "dold", text: "Ändrad på mötet" })) : null,
   );
@@ -391,11 +403,11 @@ function vyKarta(vy) {
   lagg(vy, 
     h("h1", { text: "Kartan" }),
     p("Hävstång nedåt, fönster i sidled, som på fliken Översikt. Klicka på en punkt för att läsa den och ändra bedömningen.", "lead"),
-    h("div", { class: "verktyg" }, skiftefilter(render), h("button", { type: "button", onclick: () => oppnaPunkt(nyPunkt(), { ny: true }), text: "Ny punkt" })),
+    h("div", { class: "verktyg" }, skiftefilter(render), h("button", { type: "button", onclick: () => oppnaPunkt(nyPunkt(), { ny: true }), text: "Lägg till nytt inspel" })),
     matris,
     utanfor.length ? h("section", {},
-      h("h2", { text: "Inte placerade" }),
-      p("Punkterna saknar bedömning av hävstång eller fönster. Öppna dem och fyll i.", "hjalp"),
+      h("h2", { text: "Inte bedömda ännu" }),
+      p("Inspel som saknar hävstång eller fönster. Öppna dem och bedöm när ni kommer dit; de följer med i den nya filen ändå.", "hjalp"),
       h("div", { class: "ruta" }, utanfor.map(bricka))) : null,
     h("div", { class: "forklaring" },
       h("span", {}, h("i", { class: "ta" }), "Förslag: Ta upp nu"),
@@ -443,7 +455,7 @@ function vyMote(vy) {
     h("div", { class: "verktyg" },
       h("span", { class: "grupp-namn", text: "Visa" }), valj,
       skiftefilter(() => { byggKo(); render(); }),
-      h("button", { type: "button", class: "ghost", onclick: () => { const pt = nyPunkt(); ko.splice(S.mote.i + 1, 0, pt); S.mote.i = ko.length ? S.mote.i + 1 : 0; render(); }, text: "Ny punkt" }),
+      h("button", { type: "button", class: "ghost", onclick: () => { const pt = nyPunkt(); ko.splice(S.mote.i + 1, 0, pt); S.mote.i = ko.length ? S.mote.i + 1 : 0; render(); }, text: "Lägg till nytt inspel" }),
     ),
   );
   if (!ko.length) {
@@ -493,7 +505,7 @@ function vyLista(vy) {
       const b = h("button", { type: "button", class: `listrad f-${FKLASS[f] || "parkera"}` },
         h("span", { class: "nr", text: pt.nr }),
         h("span", {},
-          h("h3", { text: pt.titel || "(utan rubrik)" }),
+          h("h3", { text: rubrik(pt) }),
           h("span", { class: "taggar" },
             pt.skifte ? h("span", { class: "tag", text: pt.skifte }) : null,
             h("span", { class: "tag", text: `Hävstång ${pt.havstang || "?"}` }),
@@ -523,7 +535,7 @@ function vyLista(vy) {
       sel("forslag", "Förslag", [["alla", "Alla förslag"], ...["Ta upp nu", "Bevaka fönster", "Parkera"].map((v) => [v, v])]),
       sel("val", "Gruppens val", [["alla", "Alla val"], ["utan", "Utan gruppens val"], ...listan("val", VAL).map((v) => [v, v])]),
       sel("ordning", "Ordning", [["nr", "Ordning: nummer"], ["mote", "Ordning: som i mötet"]]),
-      h("button", { type: "button", class: "ghost", onclick: () => oppnaPunkt(nyPunkt(), { ny: true }), text: "Ny punkt" }),
+      h("button", { type: "button", class: "ghost", onclick: () => oppnaPunkt(nyPunkt(), { ny: true }), text: "Lägg till nytt inspel" }),
     ),
     antal, ul,
   );
@@ -575,9 +587,10 @@ function vySpara(vy) {
       ),
       lista.length ? h("h2", { text: "Det här ändrades" }) : null,
       lista.length ? h("ul", { class: "andringar" }, [...perPunkt.entries()].map(([nr, x]) => h("li", {},
-        h("h3", { text: `${nr} ${x.titel}` }),
-        h("table", {}, h("tbody", {}, x.rader.map((a) => a.falt === "Ny punkt"
-          ? h("tr", {}, h("th", { text: "Ny punkt" }), h("td", { colspan: 2, text: "Läggs till i loggen" }))
+        h("h3", { text: `${nr} ${x.titel || "(utan rubrik)"}` }),
+        h("table", {}, h("tbody", {}, x.rader.map((a) => a.falt === "Nytt inspel"
+          ? h("tr", {}, h("th", { text: "Nytt inspel" }), h("td", { colspan: 2, text: "Läggs till i loggen" }))
+          : a.ny ? h("tr", {}, h("th", { text: a.falt }), h("td", { class: "muted", text: "(nytt)" }), h("td", { text: a.efter }))
           : h("tr", {}, h("th", { text: a.falt }), h("td", { class: "fore", text: a.fore || "(tomt)" }), h("td", { text: a.efter || "(tomt)" }))))),
       ))) : null,
     ),
@@ -606,7 +619,7 @@ function vyInstruktion(vy) {
       h("li", {}, h("h3", { text: "Överblicka på kartan" }),
         p("Varje punkt ligger efter hävstång (nedåt) och fönster (i sidled), som på fliken Översikt. Kantens färg visar verktygets förslag: grön för Ta upp nu, ockra för Bevaka fönster, grå för Parkera. Streckad kant betyder att räckvidden är låg. Rutan uppe till vänster, hög hävstång och öppet fönster, diskuteras först. Klicka på en punkt för att läsa och ändra den.")),
       h("li", {}, h("h3", { text: "Samtala och välj i mötesläget" }),
-        p("Mötet visar en punkt i taget. Justera hävstång, räckvidd och fönster om samtalet ger skäl; förslaget räknas om direkt. Välj Gruppens val och skriv nästa steg och ansvarig. Nya punkter som kommer upp läggs till med Ny punkt. Dela skärmen i Teams eller visa på storbild; piltangenterna bläddrar.")),
+        p("Mötet visar en punkt i taget. Justera hävstång, räckvidd och fönster om samtalet ger skäl; förslaget räknas om direkt. Välj Gruppens val och skriv nästa steg och ansvarig. Nya inspel som kommer upp läggs till med Lägg till nytt inspel; fyll i det ni vet, resten kan vänta. Dela skärmen i Teams eller visa på storbild; piltangenterna bläddrar.")),
       h("li", {}, h("h3", { text: "Spara den nya filen" }),
         p("Under Spara ny fil ser ni allt som ändrats. Ladda ner den nya Excel-filen och spara den där ni har loggen. Fliken Logg och fliken Översikt visar läget efter mötet, och en ny flik visar före och efter. Formler och rullgardiner följer med. Originalfilen ändras inte.")),
       h("li", {}, h("h3", { text: "Lär efter cykeln" }),
@@ -618,6 +631,7 @@ function vyInstruktion(vy) {
     h("ul", { class: "instruktion" },
       h("li", { text: "Inget sparas i webbläsaren och inget skickas någonstans. Stänger du fliken innan du laddat ner den nya filen försvinner mötets ändringar; webbläsaren varnar först." }),
       h("li", { text: "Filen behöver mallens kolumner, från Nr till Uppdaterad. Ordningen spelar ingen roll, och fliken heter helst Logg." }),
+      h("li", { text: "Ett nytt inspel behöver bara det ni vet. Det får nästa nummer, källan Inspel på mötet och dagens datum, och syns under Inte bedömda ännu på kartan tills hävstång och fönster är satta." }),
       h("li", { text: "Pröva gärna först med det påhittade exemplet på startsidan." }),
       h("li", { text: "Verktyget är ett diskussionsunderlag, inte en mätning." }),
     ),

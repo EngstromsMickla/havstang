@@ -206,7 +206,15 @@ function lasListor(doc, kolumner) {
 export function andringar(punkter) {
   const ut = [];
   for (const p of punkter) {
-    if (!p.original) { ut.push({ nr: p.nr, titel: p.titel, falt: "Ny punkt", fore: "", efter: p.titel }); continue; }
+    if (!p.original) {
+      const titel = String(p.titel || "").trim() || "(utan rubrik)";
+      ut.push({ nr: p.nr, titel, falt: "Nytt inspel", fore: "", efter: "Läggs till i loggen", ny: true });
+      for (const id of REDIGERBARA) {
+        const v = rensa(p[id] ?? "").trim();
+        if (v) ut.push({ nr: p.nr, titel, falt: FALT.find((f) => f.id === id).rubrik, fore: "", efter: v, ny: true });
+      }
+      continue;
+    }
     for (const id of REDIGERBARA) {
       const fore = p.original[id] ?? "";
       const efter = p[id] ?? "";
@@ -306,7 +314,7 @@ export async function skrivArbetsbok(arbetsbok, punkter, env, { datum = idag(), 
 export function sammanstallning(punkter, kolumner, radEtikett, kolEtikett, radKol, kolKol) {
   const varde = (pt, kol) => (kol === kolumner.havstang ? pt.havstang : kol === kolumner.fonsterNu ? pt.fonsterNu : kol === kolumner.rackvidd ? pt.rackvidd : kol === kolumner.skifte ? pt.skifte : kol === kolumner.val ? pt.val : null);
   return punkter
-    .filter((pt) => String(pt.titel || "").trim() && varde(pt, radKol) === radEtikett && varde(pt, kolKol) === kolEtikett)
+    .filter((pt) => (String(pt.titel || "").trim() || String(pt.nr || "").trim()) && varde(pt, radKol) === radEtikett && varde(pt, kolKol) === kolEtikett)
     .sort((a, b) => (a.rad || 1e9) - (b.rad || 1e9))
     .map((pt) => `${pt.nr} ${pt.titel}${pt.rackvidd === "Låg" ? " *" : ""}`)
     .join("\n");

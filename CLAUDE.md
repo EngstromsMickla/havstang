@@ -40,6 +40,7 @@ Arbetsbeskrivning för den som utvecklar verktyget vidare, människa eller Claud
 
 - Ändrade celler skrivs som inline-text i samma stil som cellen hade. Ändrade och nya rader får dagens datum i Uppdaterad.
 - Nya punkter får nästa nummer (HP-026 osv.) och läggs i första tomma raden efter loggen; radhöjden kopieras från första dataraden.
+- Nya inspel på mötet (knappen "Lägg till nytt inspel", v0.3, Dans krav): inget fält är obligatoriskt. Inspelet sparas så snart något fält utöver Källa är ifyllt; Källa förifylls med "Inspel på mötet ÅÅÅÅ-MM-DD". Utan rubrik ger mallens formel tomt Förslag. Inspel utan hävstång eller fönster visas under "Inte bedömda ännu" på kartan. På mötesfliken listas inspelet med en rad "Nytt inspel" och en rad per ifyllt fält.
 - Statusflikarna visar läget efter mötet direkt i filen (Dans krav 2026-10-15): Logg med ändringarna, Översikt med färdigräknade värden. Verktyget skriver de sparade värdena i Förslag och i Översiktens TEXTJOIN-formler (`uppdateraSammanstallningar` i `xlsx.js`), så att läget syns även i skyddad vy, förhandsvisning och på telefon där Excel inte räknar om. Formlerna lämnas orörda och arbetsboken får `fullCalcOnLoad`. Formler som inte följer mallens mönster lämnas åt Excel.
 - En ny flik, `Mötet ÅÅÅÅ-MM-DD`, listar varje ändring med före och efter.
 - Filnamn: originalets namn plus `_mote_ÅÅÅÅ-MM-DD.xlsx`.
