@@ -279,6 +279,10 @@ export async function skrivArbetsbok(arbetsbok, punkter, env, { datum = idag(), 
   uppdateraDimension(doc, sd);
   zip.file(bladVag, tillText(doc, env));
 
+  // Andra flikar med sammanställningar (fliken Översikt) får färdiga värden, så att de visar läget
+  // efter mötet även där Excel inte räknar om (skyddad vy, förhandsvisning, telefon).
+  await uppdateraSammanstallningar(zip, arbetsbok, punkter, env);
+
   // Excel räknar om alla formler när filen öppnas, så att fliken Översikt stämmer.
   const bok = await lasXml(zip, "xl/workbook.xml", env);
   let calc = bok.getElementsByTagNameNS(NS_MAIN, "calcPr")[0];
@@ -293,6 +297,63 @@ export async function skrivArbetsbok(arbetsbok, punkter, env, { datum = idag(), 
   zip.file("xl/workbook.xml", tillText(bok, env));
 
   return await zip.generateAsync({ type: "uint8array", compression: "DEFLATE", compressionOptions: { level: 6 } });
+}
+
+// Fliken Översikt i mallen har formler av typen
+//   TEXTJOIN(CHAR(10),TRUE(),IF((Logg!$F$5:$F$60=$A5)*(Logg!$I$5:$I$60=B$4),Logg!$A$5:$A$60&" "&Logg!$B$5:$B$60&IF(Logg!$G$5:$G$60="Låg"," *",""),""))
+// Verktyget räknar fram samma text och skriver den som cellens sparade värde. Formeln lämnas orörd.
+// Formler som inte följer mönstret lämnas åt Excel att räkna om.
+export function sammanstallning(punkter, kolumner, radEtikett, kolEtikett, radKol, kolKol) {
+  const varde = (pt, kol) => (kol === kolumner.havstang ? pt.havstang : kol === kolumner.fonsterNu ? pt.fonsterNu : kol === kolumner.rackvidd ? pt.rackvidd : kol === kolumner.skifte ? pt.skifte : kol === kolumner.val ? pt.val : null);
+  return punkter
+    .filter((pt) => String(pt.titel || "").trim() && varde(pt, radKol) === radEtikett && varde(pt, kolKol) === kolEtikett)
+    .sort((a, b) => (a.rad || 1e9) - (b.rad || 1e9))
+    .map((pt) => `${pt.nr} ${pt.titel}${pt.rackvidd === "Låg" ? " *" : ""}`)
+    .join("\n");
+}
+
+async function uppdateraSammanstallningar(zip, arbetsbok, punkter, env) {
+  const { bladVag, bladNamn, kolumner } = arbetsbok;
+  const bok = await lasXml(zip, "xl/workbook.xml", env);
+  const relDoc = await lasXml(zip, "xl/_rels/workbook.xml.rels", env);
+  if (!bok || !relDoc) return;
+  const rels = {};
+  for (const r of Array.from(relDoc.getElementsByTagName("Relationship"))) rels[r.getAttribute("Id")] = r.getAttribute("Target");
+  const ss = [];
+  const ssDoc = await lasXml(zip, "xl/sharedStrings.xml", env);
+  if (ssDoc) for (const si of Array.from(ssDoc.getElementsByTagNameNS(NS_MAIN, "si"))) ss.push(allaText(si, "t"));
+  const namnRef = /[^A-Za-z0-9_.]/.test(bladNamn) ? `'${bladNamn.replace(/'/g, "''")}'!` : `${bladNamn}!`;
+  const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const mott = new RegExp(`${esc(namnRef)}\\$([A-Z]+)\\$\\d+:\\$[A-Z]+\\$\\d+=(\\$?[A-Z]+\\$?\\d+)`, "g");
+  const tal = new Set([kolumner.nr, kolumner.titel, kolumner.rackvidd].map((k) => `${namnRef}$${k}$`));
+
+  for (const s of Array.from(bok.getElementsByTagNameNS(NS_MAIN, "sheet"))) {
+    const vag = sokvag("xl/workbook.xml", rels[s.getAttributeNS(NS_REL, "id") || s.getAttribute("r:id")] || "");
+    if (!vag || vag === bladVag || !zip.file(vag)) continue;
+    const doc = await lasXml(zip, vag, env);
+    const celler = {};
+    for (const c of Array.from(doc.getElementsByTagNameNS(NS_MAIN, "c"))) celler[c.getAttribute("r")] = c;
+    let andrat = false;
+    for (const c of Object.values(celler)) {
+      const f = forsta(c, "f");
+      if (!f || !/TEXTJOIN/i.test(f.textContent) || !f.textContent.includes(namnRef)) continue;
+      const formel = f.textContent;
+      // Kräver att formeln bygger texten av Nr, Hävstångspunkt och Räckvidd, som i mallen.
+      if (![...tal].every((t) => formel.includes(t))) continue;
+      const villkor = [...formel.matchAll(mott)];
+      if (villkor.length !== 2) continue;
+      const etikett = (ref) => { const x = celler[ref.replace(/\$/g, "")]; return x ? cellVarde(x, ss).trim() : null; };
+      const [a, b] = villkor.map((m) => ({ kol: m[1], varde: etikett(m[2]) }));
+      if (a.varde === null || b.varde === null) continue;
+      const text = sammanstallning(punkter, kolumner, a.varde, b.varde, a.kol, b.kol);
+      let v = forsta(c, "v");
+      if (!v) { v = doc.createElementNS(NS_MAIN, "v"); c.appendChild(v); }
+      v.textContent = text;
+      c.setAttribute("t", "str");
+      andrat = true;
+    }
+    if (andrat) zip.file(vag, tillText(doc, env));
+  }
 }
 
 function hittaCell(doc, rad, kol, radNr, mall) {

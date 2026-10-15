@@ -52,9 +52,22 @@ test("Mötets ändringar hamnar i rätt celler och resten lämnas orört", async
   assert.match(wb, /name="Mötet 2026-10-15"/);
   const ct = await zip.file("[Content_Types].xml").async("string");
   assert.match(ct, /sheet4\.xml/);
-  // Flikarna Översikt och instruktionen är oförändrade.
+  // Översikt visar läget efter mötet: HP-004 har flyttat till Hög × Öppet nu, nya HP-013 ligger i Medel × Snart.
+  const s2 = await zip.file("xl/worksheets/sheet2.xml").async("string");
+  const d2 = new DOMParser().parseFromString(s2, "application/xml");
+  const varde = (ref) => {
+    const c = Array.from(d2.getElementsByTagName("c")).find((x) => x.getAttribute("r") === ref);
+    const v = c && c.getElementsByTagName("v")[0];
+    return v ? v.textContent : null;
+  };
+  assert.equal(varde("B5"), "HP-001 Lärande som stannar i projekten\nHP-003 Återbruk av stomme vid ombyggnad\nHP-004 Kvällstrafik till ytterområden\nHP-009 Pengar för åtgärder före ny infrastruktur");
+  assert.equal(varde("D6"), "");
+  assert.match(varde("C6"), /HP-013 Ny punkt$/);
+  assert.match(varde("E5"), /HP-007 Lägre hastighet som standard i tätort \*/);
+  assert.match(s2, /TEXTJOIN/);
+  // Instruktionen, stilarna och de delade texterna är oförändrade.
   const orig = await JSZip.loadAsync(fs.readFileSync(EXEMPEL));
-  for (const f of ["xl/worksheets/sheet2.xml", "xl/worksheets/sheet3.xml", "xl/styles.xml", "xl/sharedStrings.xml"]) {
+  for (const f of ["xl/worksheets/sheet3.xml", "xl/styles.xml", "xl/sharedStrings.xml"]) {
     assert.equal(await zip.file(f).async("string"), await orig.file(f).async("string"), f);
   }
   // Rullgardiner och färgregler finns kvar i loggen.

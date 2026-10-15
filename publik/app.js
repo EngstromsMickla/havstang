@@ -4,7 +4,7 @@
 import { SKALA, FONSTER, SKIFTEN, VAL, forslag, motesordning, nastaNummer, idag } from "./regler.js";
 import { lasArbetsbok, skrivArbetsbok, andringar, arAndrad, nyttFilnamn, Filfel } from "./xlsx.js";
 
-const VERSION = "prototyp v0.1";
+const VERSION = "prototyp v0.2";
 const env = { JSZip: window.JSZip, DOMParser: window.DOMParser, XMLSerializer: window.XMLSerializer };
 const MAX_STORLEK = 15 * 1024 * 1024;
 
@@ -568,7 +568,7 @@ function vySpara(vy) {
           h("li", { text: "Samma flikar, formler, rullgardiner och färger som originalet. Originalfilen ändras inte." }),
           h("li", { text: `Ändrade och nya rader får ${idag()} i kolumnen Uppdaterad. Nya punkter läggs i de första tomma raderna.` }),
           h("li", { text: `En ny flik, Mötet ${idag()}, visar före och efter för varje ändring.` }),
-          h("li", { text: "Excel räknar om Förslag och Översikt när filen öppnas." }),
+          h("li", { text: "Fliken Logg och fliken Översikt visar läget efter mötet, även i förhandsvisning och skyddad vy." }),
         ),
         h("div", { class: "actions" }, knapp),
         besked,
@@ -608,7 +608,7 @@ function vyInstruktion(vy) {
       h("li", {}, h("h3", { text: "Samtala och välj i mötesläget" }),
         p("Mötet visar en punkt i taget. Justera hävstång, räckvidd och fönster om samtalet ger skäl; förslaget räknas om direkt. Välj Gruppens val och skriv nästa steg och ansvarig. Nya punkter som kommer upp läggs till med Ny punkt. Dela skärmen i Teams eller visa på storbild; piltangenterna bläddrar.")),
       h("li", {}, h("h3", { text: "Spara den nya filen" }),
-        p("Under Spara ny fil ser ni allt som ändrats. Ladda ner den nya Excel-filen och spara den där ni har loggen. Den har samma flikar, formler och rullgardiner som originalet, plus en flik som visar före och efter. Originalfilen ändras inte.")),
+        p("Under Spara ny fil ser ni allt som ändrats. Ladda ner den nya Excel-filen och spara den där ni har loggen. Fliken Logg och fliken Översikt visar läget efter mötet, och en ny flik visar före och efter. Formler och rullgardiner följer med. Originalfilen ändras inte.")),
       h("li", {}, h("h3", { text: "Lär efter cykeln" }),
         p("På utvärderingsmötet läser ni in den nya filen, fyller i Lärdom efter cykeln, justerar bedömningarna och sätter Gruppens val till Klar, Bevaka eller Parkera.")),
     ),

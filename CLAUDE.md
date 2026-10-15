@@ -7,7 +7,7 @@ Arbetsbeskrivning för den som utvecklar verktyget vidare, människa eller Claud
 - Verktyg för en arbetsgrupp som loggar hävstångspunkter och möjlighetsfönster i en Excel-mall och prioriterar dem på möten.
 - Upphov: Dan Engström, Engströms Mickla AB. Dan äger allt innehåll; Claude föreslår, Dan beslutar.
 - Logiken: först hävstångspunkter (var systemet går att rubba), sedan möjlighetsfönster (när). Excel-loggen ger fullständighet; verktyget ger överskådlighet och ett mötesflöde.
-- Pilot (prototyp v0.1, 2026-10-15): Dan förbereder genom att läsa in loggen. Gruppen prioriterar på mötet. Efter mötet laddas en ny Excel-fil ner som speglar mötets beslut.
+- Pilot (prototyp v0.1 och v0.2, 2026-10-15): Dan förbereder genom att läsa in loggen. Gruppen prioriterar på mötet. Efter mötet laddas en ny Excel-fil ner som speglar mötets beslut.
 
 ## Fasta principer
 
@@ -40,7 +40,7 @@ Arbetsbeskrivning för den som utvecklar verktyget vidare, människa eller Claud
 
 - Ändrade celler skrivs som inline-text i samma stil som cellen hade. Ändrade och nya rader får dagens datum i Uppdaterad.
 - Nya punkter får nästa nummer (HP-026 osv.) och läggs i första tomma raden efter loggen; radhöjden kopieras från första dataraden.
-- Cachade värden i Förslag uppdateras, och arbetsboken får `fullCalcOnLoad` så att Excel räknar om Förslag och Översikt när filen öppnas.
+- Statusflikarna visar läget efter mötet direkt i filen (Dans krav 2026-10-15): Logg med ändringarna, Översikt med färdigräknade värden. Verktyget skriver de sparade värdena i Förslag och i Översiktens TEXTJOIN-formler (`uppdateraSammanstallningar` i `xlsx.js`), så att läget syns även i skyddad vy, förhandsvisning och på telefon där Excel inte räknar om. Formlerna lämnas orörda och arbetsboken får `fullCalcOnLoad`. Formler som inte följer mallens mönster lämnas åt Excel.
 - En ny flik, `Mötet ÅÅÅÅ-MM-DD`, listar varje ändring med före och efter.
 - Filnamn: originalets namn plus `_mote_ÅÅÅÅ-MM-DD.xlsx`.
 
