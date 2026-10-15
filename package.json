@@ -1,0 +1,12 @@
+{
+  "name": "havstang",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/*.test.mjs"
+  },
+  "devDependencies": {
+    "@xmldom/xmldom": "0.9.8",
+    "jszip": "3.10.1"
+  }
+}
