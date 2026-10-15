@@ -4,7 +4,7 @@
 import { SKALA, FONSTER, SKIFTEN, VAL, REDIGERBARA, forslag, motesordning, nastaNummer, idag } from "./regler.js";
 import { lasArbetsbok, skrivArbetsbok, andringar, arAndrad, nyttFilnamn, Filfel } from "./xlsx.js";
 
-const VERSION = "prototyp v0.3";
+const VERSION = "prototyp v0.5";
 const env = { JSZip: window.JSZip, DOMParser: window.DOMParser, XMLSerializer: window.XMLSerializer };
 const MAX_STORLEK = 15 * 1024 * 1024;
 
@@ -367,16 +367,68 @@ function skiftefilter(nar) {
     val.map((v) => h("button", { type: "button", "aria-pressed": String(S.skifte === v), text: v === "alla" ? "Alla skiften" : v, onclick: () => { S.skifte = v; nar(); } })));
 }
 
-function bricka(pt) {
+// Brickan på kartan. På dator kan den dras till en annan ruta, och fönstertexten visas när muspekaren vilar på den.
+let dragen = null;
+function bricka(pt, { dragbar = false } = {}) {
   const f = forslag(pt);
-  const b = h("button", { type: "button", class: `bricka f-${FKLASS[f] || "parkera"}${pt.rackvidd === "Låg" ? " svar" : ""}`, title: pt.laset || pt.titel },
+  // Ett div med knapproll, eftersom riktiga knappar inte går att dra i alla webbläsare.
+  const b = h("div", { role: "button", tabindex: "0", class: `bricka f-${FKLASS[f] || "parkera"}${pt.rackvidd === "Låg" ? " svar" : ""}`, draggable: dragbar ? "true" : null },
     h("span", { class: "nr", text: pt.nr + (pt.rackvidd === "Låg" ? " · svår att nå" : "") }),
     h("span", { class: "namn", text: rubrik(pt) }),
     pt.val ? h("span", { class: "valtag" }, valTag(pt)) : null,
     arAndrad(pt) ? h("span", { class: "prick", title: "Ändrad på mötet" }, h("span", { class: "dold", text: "Ändrad på mötet" })) : null,
+    String(pt.fonster || "").trim() ? h("span", { class: "fonstertext" }, h("strong", { text: "Fönster: " }), pt.fonster) : null,
   );
   b.addEventListener("click", () => oppnaPunkt(pt));
+  b.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); oppnaPunkt(pt); } });
+  if (dragbar) {
+    b.addEventListener("dragstart", (e) => {
+      dragen = pt;
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/plain", pt.nr);
+      b.classList.add("drar");
+      b.closest(".matris")?.classList.add("drag-pagar");
+    });
+    b.addEventListener("dragend", () => {
+      dragen = null;
+      b.classList.remove("drar");
+      document.querySelectorAll(".matris").forEach((m) => m.classList.remove("drag-pagar"));
+      document.querySelectorAll(".ruta.mal").forEach((x) => x.classList.remove("mal"));
+    });
+  }
   return b;
+}
+
+function slapprute(ruta, havstang, fonsterNu) {
+  ruta.addEventListener("dragover", (e) => { if (!dragen) return; e.preventDefault(); e.dataTransfer.dropEffect = "move"; ruta.classList.add("mal"); });
+  ruta.addEventListener("dragleave", (e) => { if (!ruta.contains(e.relatedTarget)) ruta.classList.remove("mal"); });
+  ruta.addEventListener("drop", (e) => {
+    e.preventDefault();
+    ruta.classList.remove("mal");
+    const pt = dragen;
+    dragen = null;
+    if (!pt || (pt.havstang === havstang && pt.fonsterNu === fonsterNu)) return;
+    S.flytt = { pt, fore: { havstang: pt.havstang, fonsterNu: pt.fonsterNu }, efter: { havstang, fonsterNu } };
+    pt.havstang = havstang;
+    pt.fonsterNu = fonsterNu;
+    render();
+  });
+}
+
+function flyttbesked() {
+  const f = S.flytt;
+  if (!f || !S.punkter.includes(f.pt)) return null;
+  const delar = [];
+  if (f.fore.fonsterNu !== f.efter.fonsterNu) delar.push(`fönster ${f.fore.fonsterNu || "(tomt)"} till ${f.efter.fonsterNu}`);
+  if (f.fore.havstang !== f.efter.havstang) delar.push(`hävstång ${f.fore.havstang || "(tomt)"} till ${f.efter.havstang}`);
+  const angra = h("button", { type: "button", class: "lank", text: "Ångra flytten" });
+  angra.addEventListener("click", () => {
+    f.pt.havstang = f.fore.havstang;
+    f.pt.fonsterNu = f.fore.fonsterNu;
+    S.flytt = null;
+    render();
+  });
+  return h("p", { class: "note flyttad", role: "status" }, `${f.pt.nr} flyttad: ${delar.join(", ")}. Förslaget är nu ${forslag(f.pt) || "tomt"}. `, angra);
 }
 
 function vyKarta(vy) {
@@ -392,10 +444,12 @@ function vyKarta(vy) {
     kolumner.forEach((k, j) => {
       const har = synliga.filter((pt) => pt.havstang === r && pt.fonsterNu === k).sort(motesordning);
       const forst = r === rader[0] && j === 0;
-      matris.append(h("div", { class: "ruta" + (forst ? " forst" : "") + (har.length ? "" : " tom-ruta") },
+      const ruta = h("div", { class: "ruta" + (forst ? " forst" : "") + (har.length ? "" : " tom-ruta") },
         h("span", { class: "rutnamn", text: `${r} hävstång · ${k}` }),
         forst ? h("span", { class: "forstlapp", text: "Diskuteras först" }) : null,
-        har.length ? har.map(bricka) : h("span", { class: "tomt", text: "Inga punkter" })));
+        har.length ? har.map((pt) => bricka(pt, { dragbar: true })) : h("span", { class: "tomt", text: "Inga punkter" }));
+      slapprute(ruta, r, k);
+      matris.append(ruta);
     });
   }
   const utanfor = synliga.filter((pt) => !rader.includes(pt.havstang) || !kolumner.includes(pt.fonsterNu));
@@ -403,7 +457,9 @@ function vyKarta(vy) {
   lagg(vy, 
     h("h1", { text: "Kartan" }),
     p("Hävstång nedåt, fönster i sidled, som på fliken Översikt. Klicka på en punkt för att läsa den och ändra bedömningen.", "lead"),
+    p("På dator: dra en punkt till en annan ruta för att ändra fönster eller hävstång, och låt muspekaren vila på en punkt för att se vad som öppnar sig.", "hjalp"),
     h("div", { class: "verktyg" }, skiftefilter(render), h("button", { type: "button", onclick: () => oppnaPunkt(nyPunkt(), { ny: true }), text: "Lägg till nytt inspel" })),
+    flyttbesked(),
     matris,
     utanfor.length ? h("section", {},
       h("h2", { text: "Inte bedömda ännu" }),
@@ -589,8 +645,7 @@ function vySpara(vy) {
       lista.length ? h("ul", { class: "andringar" }, [...perPunkt.entries()].map(([nr, x]) => h("li", {},
         h("h3", { text: `${nr} ${x.titel || "(utan rubrik)"}` }),
         h("table", {}, h("tbody", {}, x.rader.map((a) => a.falt === "Nytt inspel"
-          ? h("tr", {}, h("th", { text: "Nytt inspel" }), h("td", { colspan: 2, text: "Läggs till i loggen" }))
-          : a.ny ? h("tr", {}, h("th", { text: a.falt }), h("td", { class: "muted", text: "(nytt)" }), h("td", { text: a.efter }))
+          ? h("tr", {}, h("th", { text: "Nytt inspel" }), h("td", { colspan: 2, text: a.efter || "Läggs till i loggen" }))
           : h("tr", {}, h("th", { text: a.falt }), h("td", { class: "fore", text: a.fore || "(tomt)" }), h("td", { text: a.efter || "(tomt)" }))))),
       ))) : null,
     ),
@@ -631,6 +686,7 @@ function vyInstruktion(vy) {
     h("ul", { class: "instruktion" },
       h("li", { text: "Inget sparas i webbläsaren och inget skickas någonstans. Stänger du fliken innan du laddat ner den nya filen försvinner mötets ändringar; webbläsaren varnar först." }),
       h("li", { text: "Filen behöver mallens kolumner, från Nr till Uppdaterad. Ordningen spelar ingen roll, och fliken heter helst Logg." }),
+      h("li", { text: "På kartan kan ni dra en punkt till en annan ruta med musen. Det ändrar fönster (i sidled) eller hävstång (i höjdled) och räknas som en ändring i den nya filen. Ångra flytten finns direkt efter. Låt muspekaren vila på en punkt för att se fönstertexten. På telefon och surfplatta öppnar ni punkten i stället." }),
       h("li", { text: "Ett nytt inspel behöver bara det ni vet. Det får nästa nummer, källan Inspel på mötet och dagens datum, och syns under Inte bedömda ännu på kartan tills hävstång och fönster är satta." }),
       h("li", { text: "Pröva gärna först med det påhittade exemplet på startsidan." }),
       h("li", { text: "Verktyget är ett diskussionsunderlag, inte en mätning." }),
@@ -660,6 +716,7 @@ window.addEventListener("hashchange", () => {
   if (dialog.open) dialog.close();
   const ny = (location.hash || "#start").slice(1);
   if (ny === "start") S.bytFil = false;
+  if (ny !== "karta") S.flytt = null;
   senasteVy = ny;
   render();
   window.scrollTo(0, 0);

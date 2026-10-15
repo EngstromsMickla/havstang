@@ -29,7 +29,7 @@ test("Mötets ändringar hamnar i rätt celler och resten lämnas orört", async
   a.nasta = "Anna ringer kommunen, v. 44 <&>";
   d.havstang = "Hög"; d.fonsterNu = "Öppet nu";
   bok.punkter.push({ nr: nastaNummer(bok.punkter), titel: "Ny punkt", laset: "Rad ett\nRad två", vem: "", skifte: "3 Samspel", havstang: "Medel", rackvidd: "Hög", fonster: "", fonsterNu: "Snart", val: "Bevaka", nasta: "", lardom: "", kalla: "", uppdaterad: "", forslag: "", rad: null, original: null });
-  assert.equal(andringar(bok.punkter).length, 12);
+  assert.equal(andringar(bok.punkter).length, 5);
 
   const ut = await skrivArbetsbok(bok, bok.punkter, env, { datum: "2026-10-15" });
   const ny = await lasArbetsbok(ut, env);
@@ -81,7 +81,9 @@ test("Ett inspel med bara det man vet kommer med i filen", async () => {
   const nr = nastaNummer(bok.punkter);
   bok.punkter.push({ nr, titel: "", laset: "Ingen äger frågan om ungas resor.", vem: "", skifte: "", havstang: "", rackvidd: "", fonster: "", fonsterNu: "", forslag: "", val: "", nasta: "", lardom: "", kalla: "Inspel på mötet 2026-10-15", uppdaterad: "", rad: null, original: null });
   const lista = andringar(bok.punkter);
-  assert.deepEqual(lista.map((a) => a.falt), ["Nytt inspel", "Låset", "Källa"]);
+  assert.equal(lista.length, 1, "ett nytt inspel ska vara en enda ändring");
+  assert.equal(lista[0].falt, "Nytt inspel");
+  assert.equal(lista[0].efter, "Låset: Ingen äger frågan om ungas resor.\nKälla: Inspel på mötet 2026-10-15");
   const ny = await lasArbetsbok(await skrivArbetsbok(bok, bok.punkter, env, { datum: "2026-10-15" }), env);
   const p = ny.punkter.find((x) => x.nr === nr);
   assert.ok(p, "inspelet saknas i den nya filen");

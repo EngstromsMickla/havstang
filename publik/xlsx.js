@@ -207,12 +207,12 @@ export function andringar(punkter) {
   const ut = [];
   for (const p of punkter) {
     if (!p.original) {
+      // Ett nytt inspel är en enda ändring. De ifyllda fälten samlas i kolumnen Efter, ett per rad.
       const titel = String(p.titel || "").trim() || "(utan rubrik)";
-      ut.push({ nr: p.nr, titel, falt: "Nytt inspel", fore: "", efter: "Läggs till i loggen", ny: true });
-      for (const id of REDIGERBARA) {
-        const v = rensa(p[id] ?? "").trim();
-        if (v) ut.push({ nr: p.nr, titel, falt: FALT.find((f) => f.id === id).rubrik, fore: "", efter: v, ny: true });
-      }
+      const falt = REDIGERBARA
+        .filter((id) => rensa(p[id] ?? "").trim())
+        .map((id) => `${FALT.find((f) => f.id === id).rubrik.replace(": vad öppnar sig?", "").replace(/\?$/, "")}: ${rensa(p[id]).trim()}`);
+      ut.push({ nr: p.nr, titel, falt: "Nytt inspel", fore: "", efter: falt.join("\n"), ny: true });
       continue;
     }
     for (const id of REDIGERBARA) {

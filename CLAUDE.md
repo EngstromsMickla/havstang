@@ -40,7 +40,7 @@ Arbetsbeskrivning för den som utvecklar verktyget vidare, människa eller Claud
 
 - Ändrade celler skrivs som inline-text i samma stil som cellen hade. Ändrade och nya rader får dagens datum i Uppdaterad.
 - Nya punkter får nästa nummer (HP-026 osv.) och läggs i första tomma raden efter loggen; radhöjden kopieras från första dataraden.
-- Nya inspel på mötet (knappen "Lägg till nytt inspel", v0.3, Dans krav): inget fält är obligatoriskt. Inspelet sparas så snart något fält utöver Källa är ifyllt; Källa förifylls med "Inspel på mötet ÅÅÅÅ-MM-DD". Utan rubrik ger mallens formel tomt Förslag. Inspel utan hävstång eller fönster visas under "Inte bedömda ännu" på kartan. På mötesfliken listas inspelet med en rad "Nytt inspel" och en rad per ifyllt fält.
+- Nya inspel på mötet (knappen "Lägg till nytt inspel", v0.3, Dans krav): inget fält är obligatoriskt. Inspelet sparas så snart något fält utöver Källa är ifyllt; Källa förifylls med "Inspel på mötet ÅÅÅÅ-MM-DD". Utan rubrik ger mallens formel tomt Förslag. Inspel utan hävstång eller fönster visas under "Inte bedömda ännu" på kartan. Ett nytt inspel räknas som en enda ändring (v0.5, Dans krav): på mötesfliken och under Spara ny fil blir det en rad "Nytt inspel" där kolumnen Efter listar de ifyllda fälten, ett per rad.
 - Statusflikarna visar läget efter mötet direkt i filen (Dans krav 2026-10-15): Logg med ändringarna, Översikt med färdigräknade värden. Verktyget skriver de sparade värdena i Förslag och i Översiktens TEXTJOIN-formler (`uppdateraSammanstallningar` i `xlsx.js`), så att läget syns även i skyddad vy, förhandsvisning och på telefon där Excel inte räknar om. Formlerna lämnas orörda och arbetsboken får `fullCalcOnLoad`. Formler som inte följer mallens mönster lämnas åt Excel.
 - En ny flik, `Mötet ÅÅÅÅ-MM-DD`, listar varje ändring med före och efter.
 - Filnamn: originalets namn plus `_mote_ÅÅÅÅ-MM-DD.xlsx`.
@@ -49,6 +49,7 @@ Arbetsbeskrivning för den som utvecklar verktyget vidare, människa eller Claud
 
 - Loggen (`#start`): inläsning, påhittat exempel, sammanfattning.
 - Kartan (`#karta`): hävstång mot fönster som på fliken Översikt. Kantfärg efter förslag, streckad kant vid låg räckvidd, prick vid ändring. Rutan Hög × Öppet nu markeras "Diskuteras först".
+  - v0.4 (Dans önskemål): på dator kan en punkt dras till en annan ruta (HTML5 dra och släpp). Det ändrar Fönster nu (sidled) och Hävstång (höjdled), räknas som ändring och kan ångras direkt via beskedet ovanför kartan. Brickorna är `div` med `role="button"`, eftersom knappar inte går att dra i alla webbläsare. Fönstertexten visas i brickan när muspekaren vilar på den (efter 0,3 s, bara på enheter med hovring) eller vid tangentbordsfokus. På telefon öppnas punkten i stället.
 - Mötet (`#mote`): en punkt i taget i mötesordning (förslag, hävstång, räckvidd, nummer). Urval: Ta upp nu, Ta upp nu och Bevaka fönster, utan gruppens val, alla. Kön behålls när man går till andra vyer.
 - Alla punkter (`#lista`): sök och filter.
 - Spara ny fil (`#spara`): före och efter, nedladdning.
