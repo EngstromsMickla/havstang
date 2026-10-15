@@ -4,7 +4,7 @@
 import { SKALA, FONSTER, SKIFTEN, VAL, REDIGERBARA, forslag, motesordning, nastaNummer, idag } from "./regler.js";
 import { lasArbetsbok, skrivArbetsbok, andringar, arAndrad, nyttFilnamn, Filfel } from "./xlsx.js";
 
-const VERSION = "prototyp v0.5";
+const VERSION = "prototyp v0.7";
 const env = { JSZip: window.JSZip, DOMParser: window.DOMParser, XMLSerializer: window.XMLSerializer };
 const MAX_STORLEK = 15 * 1024 * 1024;
 
@@ -692,7 +692,7 @@ function vyInstruktion(vy) {
       h("li", { text: "Verktyget är ett diskussionsunderlag, inte en mätning." }),
     ),
     h("h2", { text: "Om verktyget" }),
-    p("Hävstångskartan är utvecklad av Engströms Mickla AB. Frågor och förslag: dan@mickla.se."),
+    p("Hävstångskartan är utvecklad av IQ Samhällsbyggnad och Engströms Mickla AB. Frågor och förslag: dan@mickla.se."),
   ));
 }
 

@@ -6,6 +6,7 @@ Arbetsbeskrivning för den som utvecklar verktyget vidare, människa eller Claud
 
 - Verktyg för en arbetsgrupp som loggar hävstångspunkter och möjlighetsfönster i en Excel-mall och prioriterar dem på möten.
 - Upphov: Dan Engström, Engströms Mickla AB. Dan äger allt innehåll; Claude föreslår, Dan beslutar.
+- Sajten anger att kartan är utvecklad av IQ Samhällsbyggnad och Engströms Mickla AB (Dans beslut 2026-10-15, v0.6). Upphovsraden i sidfoten är "© IQ Samhällsbyggnad och Engströms Mickla AB 2026" (Dans beslut, v0.7). Micklas logotyp står kvar i sidfoten.
 - Logiken: först hävstångspunkter (var systemet går att rubba), sedan möjlighetsfönster (när). Excel-loggen ger fullständighet; verktyget ger överskådlighet och ett mötesflöde.
 - Pilot (prototyp v0.1 och v0.2, 2026-10-15): Dan förbereder genom att läsa in loggen. Gruppen prioriterar på mötet. Efter mötet laddas en ny Excel-fil ner som speglar mötets beslut.
 
@@ -17,7 +18,7 @@ Arbetsbeskrivning för den som utvecklar verktyget vidare, människa eller Claud
 - All text läggs in med DOM-metoder och `textContent`, aldrig `innerHTML`.
 - **Publikt repo.** Riktiga loggar får aldrig läggas i repot. Bara den påhittade exempelfilen `publik/exempel/Exempel_logg_havstangspunkter.xlsx`. `.gitignore` stoppar andra `.xlsx`, och `scripts/kontrollera.mjs` stoppar publiceringen om något annat hamnar i `publik/exempel/`.
 - Excel-filen är originalet. Verktyget skriver bara om de celler som ändrats; flikar, formler, rullgardiner, villkorsstyrd formatering och kolumnbredder lämnas orörda.
-- Upphovsrad: "© Engströms Mickla AB 2026". Versionsnummer (`VERSION` i `publik/app.js` och i sidfoten i `index.html`) räknas upp vid varje publicering.
+- Upphovsrad: "© IQ Samhällsbyggnad och Engströms Mickla AB 2026". Versionsnummer (`VERSION` i `publik/app.js` och i sidfoten i `index.html`) räknas upp vid varje publicering.
 
 ## Struktur
 
