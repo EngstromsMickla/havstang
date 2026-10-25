@@ -3,8 +3,9 @@
 
 import { SKALA, FONSTER, SKIFTEN, VAL, REDIGERBARA, forslag, motesordning, nastaNummer, idag } from "./regler.js";
 import { lasArbetsbok, skrivArbetsbok, andringar, arAndrad, nyttFilnamn, Filfel } from "./xlsx.js";
+import { byggMejl, mailtoLank, harInnehall as harInspel, MOTTAGARE, AMNE, MAX_LANGD } from "./inspel.js";
 
-const VERSION = "prototyp v0.7";
+const VERSION = "prototyp v0.8";
 const env = { JSZip: window.JSZip, DOMParser: window.DOMParser, XMLSerializer: window.XMLSerializer };
 const MAX_STORLEK = 15 * 1024 * 1024;
 
@@ -680,6 +681,8 @@ function vyInstruktion(vy) {
       h("li", {}, h("h3", { text: "Lär efter cykeln" }),
         p("På utvärderingsmötet läser ni in den nya filen, fyller i Lärdom efter cykeln, justerar bedömningarna och sätter Gruppens val till Klar, Bevaka eller Parkera.")),
     ),
+    h("h2", { text: "Inspel mellan mötena" }),
+    p("Projektgruppen skickar inspel med formuläret Skicka inspel. Det öppnar ett färdigt mejl med ämnet Inspel till ShiftSweden i avsändarens eget mejlprogram, med samma uppgifter som kolumnerna i loggen. Filer bifogas i mejlet. Dan för in mejlen i loggen före mötet; inspel som gäller en befintlig punkt fyller tomma fält och får tillägg, och bedömningar som skiljer sig lämnas som förslag till gruppen på fliken Inspel. Under mötet används Lägg till nytt inspel direkt på kartan."),
     h("h2", { text: "Förslaget" }),
     p("Förslaget räknas som i Excel-mallen. Ta upp nu när fönstret är öppet nu och varken hävstång eller räckvidd är låg. Bevaka fönster när hävstången är hög men punkten inte uppfyller det första. Annars Parkera. Förslaget är en utgångspunkt; det är gruppens val som gäller."),
     h("h2", { text: "Bra att veta" }),
@@ -696,7 +699,127 @@ function vyInstruktion(vy) {
   ));
 }
 
-const VYER = { start: vyStart, karta: vyKarta, mote: vyMote, lista: vyLista, spara: vySpara, instruktion: vyInstruktion };
+// ---------- Skicka inspel (för projektgruppen, mellan mötena) ----------
+// Formuläret bygger ett mejl som öppnas i besökarens eget mejlprogram. Inget skickas och inget sparas av sajten.
+
+function tomtForm() {
+  return { avsandare: "", organisation: "", punkt: "", titel: "", laset: "", vem: "", fonster: "", havstang: "", rackvidd: "", fonsterNu: "", skifte: "", lankar: [""] };
+}
+
+function vyInspel(vy) {
+  if (!S.form) S.form = tomtForm();
+  const F = S.form;
+  const forhand = h("pre", { class: "mejltext" });
+  const oppna = h("a", { class: "btn", href: "#inspel", text: "Öppna mejlet i mitt mejlprogram" });
+  const kopiera = h("button", { type: "button", class: "ghost", text: "Kopiera texten" });
+  const besked = h("p", { class: "kvitto", "aria-live": "polite" });
+  const langd = h("p", { class: "note strong", hidden: true });
+
+  const uppdatera = () => {
+    const mejl = byggMejl({ ...F, datum: idag() });
+    forhand.textContent = `Till: ${mejl.till}\nÄmne: ${mejl.amne}\n\n${mejl.text}`;
+    const ok = harInspel(F);
+    oppna.setAttribute("href", ok ? mailtoLank(mejl) : "#inspel");
+    oppna.classList.toggle("avstangd", !ok);
+    oppna.setAttribute("aria-disabled", String(!ok));
+    kopiera.disabled = !ok;
+    const lang = mailtoLank(mejl).length > MAX_LANGD;
+    langd.hidden = !lang;
+    langd.textContent = lang ? `Mejlet är långt, och vissa mejlprogram kortar det när det öppnas härifrån. Använd hellre Kopiera texten och klistra in i ett nytt mejl till ${MOTTAGARE} med ämnet "${AMNE}".` : "";
+  };
+
+  const textrad = (id, etikett, hjalp, { rader = 0, placeholder = "" } = {}) => {
+    const fid = "in-" + id;
+    const el = rader ? h("textarea", { id: fid, rows: rader, placeholder }) : h("input", { id: fid, type: "text", placeholder });
+    el.value = F[id];
+    el.addEventListener("input", () => { F[id] = el.value; uppdatera(); });
+    if (rader) autohojd(el);
+    return h("div", { class: "falt" }, h("label", { for: fid, text: etikett }), hjalp ? h("span", { class: "hjalp small", text: hjalp }) : null, el);
+  };
+  const val = (id, etikett, varden, hjalp) => {
+    const grupp = h("div", { class: "segment", role: "group", "aria-label": etikett });
+    const knappar = varden.map((v) => h("button", { type: "button", "data-v": v, "aria-pressed": String(F[id] === v), text: v }));
+    knappar.forEach((b) => b.addEventListener("click", () => {
+      F[id] = F[id] === b.dataset.v ? "" : b.dataset.v;
+      knappar.forEach((k) => k.setAttribute("aria-pressed", String(k.dataset.v === F[id])));
+      uppdatera();
+    }));
+    grupp.append(...knappar);
+    return h("div", { class: "falt" }, h("div", { class: "etikett", text: etikett }), hjalp ? h("span", { class: "hjalp small", text: hjalp }) : null, grupp);
+  };
+
+  const lankLista = h("div", { class: "lankar" });
+  const ritaLankar = () => {
+    byt(lankLista, F.lankar.map((l, i) => {
+      const inp = h("input", { type: "text", inputmode: "url", placeholder: "https://", "aria-label": `Länk ${i + 1}` });
+      inp.value = l;
+      inp.addEventListener("input", () => { F.lankar[i] = inp.value; uppdatera(); });
+      const bort = h("button", { type: "button", class: "lank", text: "Ta bort", onclick: () => { F.lankar.splice(i, 1); if (!F.lankar.length) F.lankar.push(""); ritaLankar(); uppdatera(); } });
+      return h("div", { class: "lankrad" }, inp, F.lankar.length > 1 || l ? bort : null);
+    }));
+  };
+  ritaLankar();
+
+  oppna.addEventListener("click", (e) => {
+    if (!harInspel(F)) { e.preventDefault(); besked.textContent = "Fyll i minst ett fält först."; return; }
+    besked.textContent = "Mejlet öppnas i ditt mejlprogram. Bifoga eventuella filer och tryck på skicka där. Töm sedan formuläret om du vill skicka ett inspel till.";
+  });
+  kopiera.addEventListener("click", async () => {
+    const mejl = byggMejl({ ...F, datum: idag() });
+    try { await navigator.clipboard.writeText(mejl.text); besked.textContent = `Texten är kopierad. Klistra in den i ett nytt mejl till ${MOTTAGARE} med ämnet "${AMNE}".`; }
+    catch { besked.textContent = "Kopieringen gick inte. Markera texten under Se mejlet och kopiera den själv."; }
+  });
+
+  lagg(vy, h("div", { class: "smal" },
+    h("div", { class: "eyebrow", text: "För projektgruppen" }),
+    h("h1", { text: "Skicka ett inspel" }),
+    p("Har du hittat en hävstångspunkt, ett lås eller ett möjlighetsfönster? Fyll i det du vet; inget fält är obligatoriskt. Formuläret öppnar ett färdigt mejl till Dan i ditt eget mejlprogram, och inspelet läggs in i loggen inför nästa möte.", "lead"),
+    h("span", { class: "fritt", text: "Inget skickas förrän du själv trycker på skicka i ditt mejlprogram." }),
+    h("section", { class: "card" },
+      h("h3", { text: "Från" }),
+      h("div", { class: "tvaspalt" },
+        textrad("avsandare", "Ditt namn"),
+        textrad("organisation", "Organisation"),
+      ),
+      textrad("punkt", "Gäller befintlig punkt (frivilligt)", "Skriv numret, till exempel HP-012, om inspelet hör till en punkt som redan finns i loggen."),
+    ),
+    h("section", { class: "card" },
+      h("h3", { text: "Inspelet" }),
+      textrad("titel", "Hävstångspunkt", "En kort rubrik."),
+      textrad("laset", "Låset", "Vad hindrar? Gärna en mening.", { rader: 2 }),
+      textrad("vem", "Vem kan agera", "Myndigheter, kommuner, företag eller andra som kan rubba låset.", { rader: 2 }),
+      textrad("fonster", "Fönster: vad öppnar sig?", "Ett beslut, en utredning, en upphandling, ett stort projekt. Skriv gärna datum och hur säker uppgiften är.", { rader: 3 }),
+    ),
+    h("section", { class: "card" },
+      h("h3", { text: "Din bedömning" }),
+      p("Hoppa över det du inte vet. Klicka igen för att ångra ett val.", "hjalp small"),
+      h("div", { class: "bedomning" },
+        val("havstang", "Hävstång", SKALA, "Hur stor effekt blir det om låset rubbas?"),
+        val("rackvidd", "Räckvidd", SKALA, "Kan vi nå de som kan agera?"),
+        val("fonsterNu", "Fönster nu?", FONSTER),
+        val("skifte", "Skifte", SKIFTEN),
+      ),
+    ),
+    h("section", { class: "card" },
+      h("h3", { text: "Källor" }),
+      p("Lägg till länkar till rapporter, beslut eller artiklar, så många du vill.", "hjalp small"),
+      lankLista,
+      h("button", { type: "button", class: "ghost", text: "Lägg till länk", onclick: () => { F.lankar.push(""); ritaLankar(); uppdatera(); lankLista.querySelector(".lankrad:last-child input")?.focus(); } }),
+      p("Har du en fil, till exempel en rapport eller ett PM? Bifoga den i mejlet innan du skickar. Det går inte att bifoga filer från formuläret.", "note strong"),
+    ),
+    langd,
+    h("div", { class: "actions" },
+      oppna, kopiera,
+      h("button", { type: "button", class: "ghost", text: "Töm formuläret", onclick: () => { S.form = tomtForm(); render(); } }),
+    ),
+    besked,
+    h("details", { class: "forhand" }, h("summary", { text: "Se mejlet" }), forhand),
+    p(`Mejlet går till ${MOTTAGARE} med ämnet "${AMNE}". Uppgifterna används bara för att föra in inspelet i projektets logg; ditt namn och din organisation står i loggens kolumn Källa.`, "hjalp small"),
+  ));
+  uppdatera();
+}
+
+const VYER = { start: vyStart, karta: vyKarta, mote: vyMote, lista: vyLista, spara: vySpara, inspel: vyInspel, instruktion: vyInstruktion };
 
 function render() {
   const namn = (location.hash || "#start").slice(1);

@@ -293,3 +293,15 @@ dialog.punkt .kort { border: 0; }
 }
 .matris.drag-pagar .bricka .fonstertext { max-height: 0 !important; opacity: 0 !important; margin: 0 !important; padding: 0 !important; border: 0 !important; }
 .note.flyttad { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; }
+
+/* Skicka inspel (v0.8) */
+.falt .hjalp.small { display: block; margin: -2px 0 6px; }
+.card .falt { margin: 0 0 14px; }
+.card .falt > label, .card .falt > .etikett { display: block; font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+.card textarea { min-height: 0; }
+.lankar { display: grid; gap: 8px; margin: 0 0 10px; }
+.lankrad { display: flex; gap: 10px; align-items: center; }
+.lankrad input { flex: 1; }
+a.btn.avstangd { opacity: .45; cursor: not-allowed; }
+pre.mejltext { white-space: pre-wrap; overflow-wrap: anywhere; font: 13px/1.5 ui-monospace, "SF Mono", Menlo, Consolas, monospace; background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 14px; }
+details.forhand { margin: 8px 0 16px; }

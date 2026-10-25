@@ -233,7 +233,7 @@ export function arAndrad(p) {
 
 // ---------- Skrivning ----------
 
-export async function skrivArbetsbok(arbetsbok, punkter, env, { datum = idag(), motesflik = true } = {}) {
+export async function skrivArbetsbok(arbetsbok, punkter, env, { datum = idag(), motesflik = true, fliknamn = "Mötet", noteringar = [] } = {}) {
   const { zip: orginalZip, bladVag, rubrikRad, kolumner } = arbetsbok;
   // Arbeta på en kopia av arkivet, så att flera nedladdningar alltid utgår från originalet.
   const zip = await env.JSZip.loadAsync(await orginalZip.generateAsync({ type: "uint8array" }));
@@ -301,7 +301,7 @@ export async function skrivArbetsbok(arbetsbok, punkter, env, { datum = idag(), 
   }
   calc.setAttribute("fullCalcOnLoad", "1");
 
-  if (motesflik) await laggTillMotesflik(zip, bok, arbetsbok, andringar(punkter), datum, env);
+  if (motesflik) await laggTillMotesflik(zip, bok, arbetsbok, [...andringar(punkter), ...noteringar], datum, env, fliknamn);
   zip.file("xl/workbook.xml", tillText(bok, env));
 
   return await zip.generateAsync({ type: "uint8array", compression: "DEFLATE", compressionOptions: { level: 6 } });
@@ -438,12 +438,12 @@ function uppdateraDimension(doc, sd) {
   if (slut && max > slut.rad) dim.setAttribute("ref", `${a}:${slut.kol}${max}`);
 }
 
-async function laggTillMotesflik(zip, bok, arbetsbok, lista, datum, env) {
+async function laggTillMotesflik(zip, bok, arbetsbok, lista, datum, env, fliknamn = "Mötet") {
   const sheets = bok.getElementsByTagNameNS(NS_MAIN, "sheets")[0];
   const befintliga = Array.from(barn(sheets, "sheet"));
   const namnSet = new Set(befintliga.map((s) => s.getAttribute("name")));
-  let namn = `Mötet ${datum}`;
-  for (let i = 2; namnSet.has(namn); i++) namn = `Mötet ${datum} (${i})`;
+  let namn = `${fliknamn} ${datum}`;
+  for (let i = 2; namnSet.has(namn); i++) namn = `${fliknamn} ${datum} (${i})`;
 
   const relDoc = await lasXml(zip, "xl/_rels/workbook.xml.rels", env);
   const relRot = relDoc.documentElement;
@@ -457,7 +457,7 @@ async function laggTillMotesflik(zip, bok, arbetsbok, lista, datum, env) {
   const stilText = stilFor(arbetsbok, arbetsbok.rubrikRad + 1, arbetsbok.kolumner.laset);
   const cell = (ref, text, s) => `<c r="${ref}"${s ? ` s="${s}"` : ""} t="inlineStr"><is><t xml:space="preserve">${esc(text)}</t></is></c>`;
   const rader = [];
-  rader.push(`<row r="1">${cell("A1", `Mötet ${datum}: det som ändrades i loggen`, stilRubrik)}</row>`);
+  rader.push(`<row r="1">${cell("A1", `${fliknamn} ${datum}: det som ändrades i loggen`, stilRubrik)}</row>`);
   rader.push(`<row r="2">${cell("A2", lista.length ? `${lista.length} ändringar. Loggen på fliken ${arbetsbok.bladNamn} är uppdaterad; här syns vad som var före och efter.` : "Inga ändringar gjordes på mötet.", "")}</row>`);
   const rub = ["Nr", "Hävstångspunkt", "Fält", "Före", "Efter"];
   rader.push(`<row r="4">${rub.map((t, i) => cell(talTillKolumn(i + 1) + "4", t, stilRubrik)).join("")}</row>`);
