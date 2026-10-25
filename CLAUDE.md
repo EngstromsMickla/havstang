@@ -71,6 +71,8 @@ Arbetsbeskrivning för den som utvecklar verktyget vidare, människa eller Claud
 ## Beslut och öppna frågor
 
 - Valt alternativ 1 av tre (2026-10-15): tomt verktyg som läser filen lokalt, i stället för inloggning med gemensam lagring eller en privat sida hos annan leverantör.
+- Arbetsmodell (Dans beslut 2026-10-25): Excel-filen är verktygets databas och ligger kvar i botten. Alla i gruppen har tillgång till filen mellan mötena och kan läsa in den på sajten för att se mönster, men IQ Samhällsbyggnads exemplar är det som gäller. Bara IQ Samhällsbyggnad skriver i filen (i praktiken Dan, som för in inspel och mötets beslut). Inga ändringar är tagna förrän gruppen har beslutat tillsammans på ett möte; inspel som förs in före mötet är underlag, inte beslut. Ingen databas, server eller inloggning; en koppling till IQ Samhällsbyggnads Microsoft 365 är prövad och avvisad tills vidare.
+- Mallens struktur (rubriker, rullgardiner, formeln för Förslag) ändras bara i samråd, eftersom verktyget bygger på den.
 - Eget repo och egen subdomän, eftersom Boost är ägnat åt Learning Curve Approach.
 - Öppet: om projektnamnet ska nämnas på sajten; om regeln för Förslag ska ge "Snart" med nära datum samma vikt som "Öppet nu"; om mallen ska få kolumnerna Fönsterdatum och Säkerhet (då kan en tidslinje byggas).
 
@@ -80,4 +82,4 @@ Kör `node scripts/kontrollera.mjs` och `npm test`. Kör hela flödet i en webbl
 
 ## Publicering
 
-Dan laddar upp filer via GitHubs webbgränssnitt. Mappar som börjar med punkt (`.github`) följer inte med vid uppladdning och skapas i stället med Add file > Create new file. Publicera aldrig utan att Dan har sagt "publicera".
+Claude publicerar direkt till `main` i EngstromsMickla/havstang när Dan säger "publicera" (sedan v0.8, 2026-10-25). Publicera aldrig utan det ordet. Kör kontrollerna och testerna före varje publicering; GitHub Actions kör dem igen och stoppar publiceringen om något fallerar. Laddar Dan upp filer själv via GitHubs webbgränssnitt följer mappar som börjar med punkt (`.github`) inte med; de skapas med Add file > Create new file.
