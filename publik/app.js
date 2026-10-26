@@ -1,11 +1,11 @@
 // Hävstångskartan: vyerna. All text läggs in med textContent, aldrig som HTML.
 // Loggen hålls bara i minnet. Inget sparas i webbläsaren och inget skickas någonstans.
 
-import { SKALA, FONSTER, SKIFTEN, VAL, REDIGERBARA, forslag, motesordning, nastaNummer, idag } from "./regler.js";
+import { SKALA, FONSTER, SKIFTEN, SKIFTEN_LANG, VAL, REDIGERBARA, forslag, motesordning, nastaNummer, idag } from "./regler.js";
 import { lasArbetsbok, skrivArbetsbok, andringar, arAndrad, nyttFilnamn, Filfel } from "./xlsx.js";
 import { byggMejl, mailtoLank, harInnehall as harInspel, MOTTAGARE, AMNE, MAX_LANGD } from "./inspel.js";
 
-const VERSION = "prototyp v0.8";
+const VERSION = "prototyp v0.9";
 const env = { JSZip: window.JSZip, DOMParser: window.DOMParser, XMLSerializer: window.XMLSerializer };
 const MAX_STORLEK = 15 * 1024 * 1024;
 
@@ -102,6 +102,7 @@ async function lasFil(fil) {
     S.nedladdad = null;
     S.mote = { urval: "ta", ko: [], i: 0 };
     S.bytFil = false;
+    S.testlage = false;
     uppdateraStatus();
     if (location.hash === "#karta") render(); else location.hash = "#karta";
   } catch (err) {
@@ -111,15 +112,21 @@ async function lasFil(fil) {
   }
 }
 
-async function lasExempel() {
+// Testa själv: en ögonblicksbild av loggen med inspel från offentliga rapporter, för gäster som vill prova sajten.
+const TESTFIL = "Testa_sjalv_havstangskartan_2026-10-26.xlsx";
+const TESTTEXT = "Alla inspel som finns här är hämtade från rapporter och styrdokument som fanns på shiftsweden.se den 2026-10-26. Bedömningarna av hävstång, räckvidd och fönster är ett diskussionsunderlag, inte ShiftSwedens ståndpunkt.";
+
+async function lasTestfil() {
   try {
-    const svar = await fetch("exempel/Exempel_logg_havstangspunkter.xlsx");
+    const svar = await fetch("exempel/" + TESTFIL);
     if (!svar.ok) throw new Error(String(svar.status));
     const blob = await svar.blob();
-    await lasFil(new File([blob], "Exempel_logg_havstangspunkter.xlsx"));
+    await lasFil(new File([blob], TESTFIL));
+    S.testlage = true;
+    render();
   } catch (err) {
     console.error(err);
-    S.fel = "Exempelfilen gick inte att hämta.";
+    S.fel = "Testfilen gick inte att hämta.";
     render();
   }
 }
@@ -333,6 +340,7 @@ function vyStart(vy) {
         h("div", { class: "eyebrow", text: "Inläst logg" }),
         h("h1", { text: S.filnamn }),
         p(`${S.punkter.length} hävstångspunkter från fliken ${S.bok.bladNamn}. Filen finns bara i den här fliken i webbläsaren.`, "lead"),
+        S.testlage ? p("Du testar sajten. " + TESTTEXT + " Ändra, dra och lägg till fritt; inget sparas, och du kan ladda ner en egen kopia under Spara ny fil.", "note") : null,
         siffror(),
         h("div", { class: "actions" },
           h("a", { class: "btn", href: "#karta", text: "Öppna kartan" }),
@@ -352,9 +360,14 @@ function vyStart(vy) {
       h("span", { class: "fritt", text: "Filen läses i din webbläsare och lämnar aldrig datorn." }),
       S.fel ? p(S.fel, "note weak") : null,
       S.bytFil && n > 0 ? p(`Ni har ${n} ändringar som inte är nedladdade. Ladda ner den nya filen under Spara ny fil innan ni läser in en annan, annars försvinner de.`, "note strong") : null,
+      h("section", { class: "card testa" },
+        h("h3", { text: "Testa själv" }),
+        p("Är du ny här? Läs in en ögonblicksbild av loggen och prova kartan, mötet och den nya Excel-filen. " + TESTTEXT),
+        h("button", { type: "button", onclick: lasTestfil, text: "Testa själv" }),
+      ),
+      h("h2", { class: "liten-rubrik", text: "För projektgruppen: läs in loggen" }),
       slappyta(),
       h("div", { class: "actions" },
-        h("button", { type: "button", class: "ghost", onclick: lasExempel, text: "Pröva med ett påhittat exempel" }),
         S.bytFil ? h("button", { type: "button", class: "ghost", onclick: () => { S.bytFil = false; render(); }, text: "Behåll den inlästa filen" }) : null,
         h("a", { href: "#instruktion", text: "Så fungerar det" }),
       ),
@@ -458,6 +471,7 @@ function vyKarta(vy) {
   lagg(vy, 
     h("h1", { text: "Kartan" }),
     p("Hävstång nedåt, fönster i sidled, som på fliken Översikt. Klicka på en punkt för att läsa den och ändra bedömningen.", "lead"),
+    S.testlage ? p("Testa själv: " + TESTTEXT, "note") : null,
     p("På dator: dra en punkt till en annan ruta för att ändra fönster eller hävstång, och låt muspekaren vila på en punkt för att se vad som öppnar sig.", "hjalp"),
     h("div", { class: "verktyg" }, skiftefilter(render), h("button", { type: "button", onclick: () => oppnaPunkt(nyPunkt(), { ny: true }), text: "Lägg till nytt inspel" })),
     flyttbesked(),
@@ -683,6 +697,8 @@ function vyInstruktion(vy) {
     ),
     h("h2", { text: "Inspel mellan mötena" }),
     p("Projektgruppen skickar inspel med formuläret Skicka inspel. Det öppnar ett färdigt mejl med ämnet Inspel till ShiftSweden i avsändarens eget mejlprogram, med samma uppgifter som kolumnerna i loggen. Filer bifogas i mejlet. Dan för in mejlen i loggen före mötet; inspel som gäller en befintlig punkt fyller tomma fält och får tillägg, och bedömningar som skiljer sig lämnas som förslag till gruppen på fliken Inspel. Under mötet används Lägg till nytt inspel direkt på kartan."),
+    h("h2", { text: "ShiftSwedens tre skiften" }),
+    h("dl", { class: "skiften" }, Object.entries(SKIFTEN_LANG).map(([namn, text]) => [h("dt", { text: namn }), h("dd", { text })])),
     h("h2", { text: "Förslaget" }),
     p("Förslaget räknas som i Excel-mallen. Ta upp nu när fönstret är öppet nu och varken hävstång eller räckvidd är låg. Bevaka fönster när hävstången är hög men punkten inte uppfyller det första. Annars Parkera. Förslaget är en utgångspunkt; det är gruppens val som gäller."),
     h("h2", { text: "Bra att veta" }),
@@ -691,7 +707,7 @@ function vyInstruktion(vy) {
       h("li", { text: "Filen behöver mallens kolumner, från Nr till Uppdaterad. Ordningen spelar ingen roll, och fliken heter helst Logg." }),
       h("li", { text: "På kartan kan ni dra en punkt till en annan ruta med musen. Det ändrar fönster (i sidled) eller hävstång (i höjdled) och räknas som en ändring i den nya filen. Ångra flytten finns direkt efter. Låt muspekaren vila på en punkt för att se fönstertexten. På telefon och surfplatta öppnar ni punkten i stället." }),
       h("li", { text: "Ett nytt inspel behöver bara det ni vet. Det får nästa nummer, källan Inspel på mötet och dagens datum, och syns under Inte bedömda ännu på kartan tills hävstång och fönster är satta." }),
-      h("li", { text: "Pröva gärna först med det påhittade exemplet på startsidan." }),
+      h("li", { text: "Ny här? Använd Testa själv på startsidan. " + TESTTEXT }),
       h("li", { text: "Verktyget är ett diskussionsunderlag, inte en mätning." }),
     ),
     h("h2", { text: "Om verktyget" }),

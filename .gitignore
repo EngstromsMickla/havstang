@@ -1,4 +1,5 @@
 node_modules/
-# Riktiga loggar läggs aldrig i repot, bara den påhittade exempelfilen.
+# Riktiga loggar läggs aldrig i repot. Undantag: testfilen med offentliga inspel och testernas påhittade fil.
 *.xlsx
-!publik/exempel/Exempel_*.xlsx
+!publik/exempel/Testa_sjalv_*.xlsx
+!test/fixtures/Exempel_*.xlsx

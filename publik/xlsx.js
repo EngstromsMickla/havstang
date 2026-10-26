@@ -6,7 +6,7 @@
 //
 // Modulen tar emot JSZip, DOMParser och XMLSerializer utifrån, så att samma kod kan testas i Node.
 
-import { FALT, REDIGERBARA, forslag, idag } from "./regler.js";
+import { FALT, REDIGERBARA, forslag, idag, skifteNamn } from "./regler.js";
 
 const NS_MAIN = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
 const NS_REL = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
@@ -131,6 +131,7 @@ export async function lasArbetsbok(data, env) {
       if (f.id === "uppdaterad" && /^\d+(\.\d+)?$/.test(v)) v = serieTillDatum(v);
       p[f.id] = String(v).trim();
     }
+    p.skifte = skifteNamn(p.skifte);
     if (!p.titel && !p.nr) continue;
     p.original = Object.fromEntries(FALT.map((f) => [f.id, p[f.id]]));
     punkter.push(p);
@@ -144,7 +145,7 @@ export async function lasArbetsbok(data, env) {
 
   return {
     zip, stilar, bladVag: logg.vag, bladNamn: logg.namn, rubrikRad, kolumner, punkter,
-    listor: lasListor(doc, kolumner),
+    listor: (() => { const l = lasListor(doc, kolumner); if (l.skifte) l.skifte = l.skifte.map(skifteNamn); return l; })(),
     alla: blad.map((b) => b.namn),
   };
 }

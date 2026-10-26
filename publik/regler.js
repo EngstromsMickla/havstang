@@ -3,7 +3,17 @@
 
 export const SKALA = ["Hög", "Medel", "Låg"];
 export const FONSTER = ["Öppet nu", "Snart", "Stängt", "Vet ej"];
-export const SKIFTEN = ["1 Cirkulärt", "2 Mobilitet", "3 Samspel", "Tvärgående"];
+export const SKIFTEN = ["1 Cirkulärt byggande", "2 Ny frihetsreform för resande", "3 Byggd miljö möter mobilitet", "Tvärgående"];
+// Skiftenas fulla lydelse enligt ShiftSweden, för instruktionen.
+export const SKIFTEN_LANG = {
+  "1 Cirkulärt byggande": "Från resurskrävande linjära byggprocesser till hållbara och värdeskapande cirkulära affärsmodeller.",
+  "2 Ny frihetsreform för resande": "Från ohållbara transporter till en ny frihetsreform med konkurrenskraftiga alternativ till enskilt bilresande.",
+  "3 Byggd miljö möter mobilitet": "Från skilda sektorer till integrerade arbetssätt och lösningar i mötet mellan byggd miljö och mobilitet.",
+  "Tvärgående": "Punkter som berör flera skiften.",
+};
+// Äldre namn (logg v5 och tidigare) översätts när en fil läses in.
+export const SKIFTE_ALIAS = { "1 Cirkulärt": "1 Cirkulärt byggande", "2 Mobilitet": "2 Ny frihetsreform för resande", "3 Samspel": "3 Byggd miljö möter mobilitet" };
+export function skifteNamn(v) { const t = String(v || "").trim(); return SKIFTE_ALIAS[t] || t; }
 export const VAL = ["Ta upp nu", "Bevaka", "Parkera", "Klar"];
 export const FORSLAG = ["Ta upp nu", "Bevaka fönster", "Parkera"];
 

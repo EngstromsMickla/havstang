@@ -8,7 +8,7 @@ import { lasArbetsbok, skrivArbetsbok, andringar, nyttFilnamn } from "../publik/
 import { nastaNummer } from "../publik/regler.js";
 
 const env = { JSZip, DOMParser, XMLSerializer };
-const EXEMPEL = new URL("../publik/exempel/Exempel_logg_havstangspunkter.xlsx", import.meta.url);
+const EXEMPEL = new URL("./fixtures/Exempel_logg_havstangspunkter.xlsx", import.meta.url);
 const las = () => lasArbetsbok(fs.readFileSync(EXEMPEL), env);
 
 test("Exempelfilen läses med alla kolumner och rullgardiner", async () => {

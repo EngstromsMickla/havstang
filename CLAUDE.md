@@ -16,7 +16,7 @@ Arbetsbeskrivning för den som utvecklar verktyget vidare, människa eller Claud
 - **Loggen lämnar aldrig webbläsaren.** Filen läses från disken med JSZip och DOMParser och den nya filen laddas ner till disken. Ingen server, ingen statistik, inga kakor, inga externa typsnitt eller CDN. Content Security Policy i `publik/index.html` tillåter bara sidans egna filer.
 - **Inget sparas i webbläsaren** (ingen localStorage). Mötets ändringar finns bara i minnet tills filen laddas ner; webbläsaren varnar om fliken stängs med ändringar som inte laddats ner.
 - All text läggs in med DOM-metoder och `textContent`, aldrig `innerHTML`.
-- **Publikt repo.** Riktiga loggar får aldrig läggas i repot. Bara den påhittade exempelfilen `publik/exempel/Exempel_logg_havstangspunkter.xlsx`. `.gitignore` stoppar andra `.xlsx`, och `scripts/kontrollera.mjs` stoppar publiceringen om något annat hamnar i `publik/exempel/`.
+- **Publikt repo.** Riktiga loggar får aldrig läggas i repot. Undantag: testfilen `publik/exempel/Testa_sjalv_havstangskartan_2026-10-26.xlsx` (se Testa själv) och testernas påhittade fil `test/fixtures/Exempel_logg_havstangspunkter.xlsx`. `.gitignore` stoppar andra `.xlsx`, och `scripts/kontrollera.mjs` stoppar publiceringen om något annat än en `Testa_sjalv_`-fil hamnar i `publik/exempel/`.
 - Excel-filen är originalet. Verktyget skriver bara om de celler som ändrats; flikar, formler, rullgardiner, villkorsstyrd formatering och kolumnbredder lämnas orörda.
 - Upphovsrad: "© IQ Samhällsbyggnad och Engströms Mickla AB 2026". Versionsnummer (`VERSION` i `publik/app.js` och i sidfoten i `index.html`) räknas upp vid varje publicering.
 
@@ -25,9 +25,9 @@ Arbetsbeskrivning för den som utvecklar verktyget vidare, människa eller Claud
 - `publik/`: det som publiceras.
   - `index.html`, `style.css` (Boosts formspråk), `app.js` (vyerna), `regler.js` (förslagsregeln, mötesordning, kolumner), `xlsx.js` (läsa och skriva Excel).
   - `vendor/jszip.min.js` (JSZip 3.10.1, MIT) med licens.
-  - `exempel/`: den påhittade exempelfilen, samma struktur som mallen.
+  - `exempel/`: testfilen för Testa själv.
   - `img/mickla.png`: ormen.
-- `test/`: Node-tester mot exempelfilen (`npm test`).
+- `test/`: Node-tester (`npm test`) mot den påhittade filen i `test/fixtures/` och mot testfilen.
 - `scripts/kontrollera.mjs`: inga externa adresser, ingen innerHTML, inga tankstreck, CSP finns, bara exempelfiler.
 - `.github/workflows/publicera.yml`: kontroller och tester före varje publicering; publiceringen stoppas om något fallerar.
 
@@ -56,6 +56,17 @@ Arbetsbeskrivning för den som utvecklar verktyget vidare, människa eller Claud
 - Regler (`applicera` i `inspel.js`): utan befintlig punkt blir inspelet en ny rad med nästa nummer. Med befintlig punkt fylls tomma fält, texter som redan finns får "Tillägg från <namn>, <datum>: …", och bedömningar eller rubrik som skiljer sig ändras inte utan noteras som förslag till gruppen. Källa får raden "Inspel från <namn>, <organisation>, <datum>" och länkarna. En angiven punkt som inte finns blir en ny rad med en notering.
 - Den nya filen heter `<logg>_inspel_<datum>.xlsx` och har fliken "Inspel <datum>" med ändringar och noteringar. Mötesfunktionen Lägg till nytt inspel finns kvar för mötet.
 - Inspelen i loggen före v0.8 kommer från rapporter på shiftsweden.se; Källa anger rapporten.
+
+## Skiften (v0.9, Dans beslut 2026-10-26)
+
+- Skiftena heter `1 Cirkulärt byggande`, `2 Ny frihetsreform för resande`, `3 Byggd miljö möter mobilitet` och `Tvärgående` (`SKIFTEN` i `regler.js`, full lydelse i `SKIFTEN_LANG`). De gamla namnen (`1 Cirkulärt`, `2 Mobilitet`, `3 Samspel`) översätts när en äldre fil eller ett mejl läses (`SKIFTE_ALIAS`). Loggen v6 har de nya namnen i rullgardinen och raden Skiften på instruktionsfliken.
+
+## Testa själv (v0.9, Dans beslut 2026-10-26)
+
+- För gäster som vill prova sajten. Knappen på startsidan läser in `publik/exempel/Testa_sjalv_havstangskartan_2026-10-26.xlsx`, en ögonblicksbild av loggen v6 med 45 punkter.
+- Sidan säger: "Alla inspel som finns här är hämtade från rapporter och styrdokument som fanns på shiftsweden.se den 2026-10-26. Bedömningarna av hävstång, räckvidd och fönster är ett diskussionsunderlag, inte ShiftSwedens ståndpunkt."
+- Testfilen får aldrig innehålla Gruppens val, Nästa steg, Lärdom, mötes- eller inspelsflikar, projektnamnet i rubriken, interna filhänvisningar eller personliga metadata. `test/testfil.test.mjs` kontrollerar det. En ny ögonblicksbild byggs från Dans senaste logg och ersätter filen; datumet i filnamn och text ändras samtidigt.
+- HP-026 till HP-045 kommer från de fördjupade strategierna för skifte 1, 2 och 3 och den internationella strategin (2026-10-26). Deras bedömningar är preliminära, gjorda av Claude utifrån rapporterna, och står så i Källa; gruppen avgör.
 
 ## Vyer
 

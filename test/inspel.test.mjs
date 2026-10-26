@@ -10,7 +10,7 @@ import { byggMejl, mailtoLank, lasMejl, applicera, MOTTAGARE, AMNE } from "../pu
 import { lasArbetsbok } from "../publik/xlsx.js";
 
 const env = { JSZip, DOMParser, XMLSerializer };
-const EXEMPEL = new URL("../publik/exempel/Exempel_logg_havstangspunkter.xlsx", import.meta.url).pathname;
+const EXEMPEL = new URL("./fixtures/Exempel_logg_havstangspunkter.xlsx", import.meta.url).pathname;
 const FORM = {
   datum: "2026-10-25", avsandare: "Anna Andersson", organisation: "Exempelregionen", punkt: "",
   titel: "Gemensam data om ungas resor", laset: "Ingen äger frågan.\nSiffrorna finns på tre ställen.",

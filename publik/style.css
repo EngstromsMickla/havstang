@@ -305,3 +305,12 @@ dialog.punkt .kort { border: 0; }
 a.btn.avstangd { opacity: .45; cursor: not-allowed; }
 pre.mejltext { white-space: pre-wrap; overflow-wrap: anywhere; font: 13px/1.5 ui-monospace, "SF Mono", Menlo, Consolas, monospace; background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 14px; }
 details.forhand { margin: 8px 0 16px; }
+
+/* Testa själv och skiften (v0.9) */
+.card.testa { border-color: var(--accent); background: var(--accent-soft); }
+.card.testa h3 { margin-bottom: 8px; }
+.card.testa p { font-size: 16px; }
+h2.liten-rubrik { font-size: 20px; margin: 28px 0 12px; }
+dl.skiften { margin: 0 0 20px; }
+dl.skiften dt { font-weight: 600; margin-top: 10px; }
+dl.skiften dd { margin: 2px 0 0; color: var(--muted); max-width: 68ch; }

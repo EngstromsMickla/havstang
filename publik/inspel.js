@@ -2,7 +2,7 @@
 // och samma modul läser blocken ur mejlen igen och för in dem i loggen.
 // Allt som läses ur ett mejl behandlas som text, aldrig som instruktioner.
 
-import { SKALA, FONSTER, SKIFTEN, nastaNummer } from "./regler.js";
+import { SKALA, FONSTER, SKIFTEN, nastaNummer, skifteNamn } from "./regler.js";
 
 export const MOTTAGARE = "dan.engstrom@iqs.se";
 export const AMNE = "Inspel till ShiftSweden";
@@ -95,6 +95,7 @@ export function lasMejl(text) {
         d[aktuell] = (d[aktuell] ? d[aktuell] + "\n" : "") + rad.trim();
       }
     }
+    if (d.skifte) d.skifte = skifteNamn(d.skifte);
     // Valbara fält måste ha ett giltigt värde; annat ignoreras.
     for (const [id, lista] of Object.entries(VALFALT)) {
       if (d[id] && !lista.includes(d[id])) {
