@@ -16,7 +16,7 @@ Arbetsbeskrivning för den som utvecklar verktyget vidare, människa eller Claud
 - **Loggen lämnar aldrig webbläsaren.** Filen läses från disken med JSZip och DOMParser och den nya filen laddas ner till disken. Ingen server, ingen statistik, inga kakor, inga externa typsnitt eller CDN. Content Security Policy i `publik/index.html` tillåter bara sidans egna filer.
 - **Inget sparas i webbläsaren** (ingen localStorage). Mötets ändringar finns bara i minnet tills filen laddas ner; webbläsaren varnar om fliken stängs med ändringar som inte laddats ner.
 - All text läggs in med DOM-metoder och `textContent`, aldrig `innerHTML`.
-- **Publikt repo.** Riktiga loggar får aldrig läggas i repot. Undantag: testfilen `publik/exempel/Testa_sjalv_havstangskartan_2026-10-26.xlsx` (se Testa själv) och testernas påhittade fil `test/fixtures/Exempel_logg_havstangspunkter.xlsx`. `.gitignore` stoppar andra `.xlsx`, och `scripts/kontrollera.mjs` stoppar publiceringen om något annat än en `Testa_sjalv_`-fil hamnar i `publik/exempel/`.
+- **Publikt repo.** Riktiga loggar får aldrig läggas i repot. Undantag: testfilen `publik/exempel/Testa_sjalv_havstangskartan_2026-10-27.xlsx` (se Testa själv) och testernas påhittade fil `test/fixtures/Exempel_logg_havstangspunkter.xlsx`. `.gitignore` stoppar andra `.xlsx`, och `scripts/kontrollera.mjs` stoppar publiceringen om något annat än en `Testa_sjalv_`-fil hamnar i `publik/exempel/`.
 - Excel-filen är originalet. Verktyget skriver bara om de celler som ändrats; flikar, formler, rullgardiner, villkorsstyrd formatering och kolumnbredder lämnas orörda.
 - Upphovsrad: "© IQ Samhällsbyggnad och Engströms Mickla AB 2026". Versionsnummer (`VERSION` i `publik/app.js` och i sidfoten i `index.html`) räknas upp vid varje publicering.
 
@@ -63,10 +63,10 @@ Arbetsbeskrivning för den som utvecklar verktyget vidare, människa eller Claud
 
 ## Testa själv (v0.9, Dans beslut 2026-10-26)
 
-- För gäster som vill prova sajten. Knappen på startsidan läser in `publik/exempel/Testa_sjalv_havstangskartan_2026-10-26.xlsx`, en ögonblicksbild av loggen v6 med 45 punkter.
-- Sidan säger: "Alla inspel som finns här är hämtade från rapporter och styrdokument som fanns på shiftsweden.se den 2026-10-26. Bedömningarna av hävstång, räckvidd och fönster är ett diskussionsunderlag, inte ShiftSwedens ståndpunkt."
+- För gäster som vill prova sajten. Knappen på startsidan läser in `publik/exempel/Testa_sjalv_havstangskartan_2026-10-27.xlsx`, en ögonblicksbild av loggen v7 med 53 punkter (v0.10).
+- Sidan säger (`TESTTEXT` i `app.js`): "Alla inspel som finns här är hämtade från rapporter och styrdokument som fanns på shiftsweden.se den 2026-10-26, och från skriften Systemperspektiv för samhällstransformation. Fem nycklar för transformation, som IQ Samhällsbyggnads expertråd för strategi tagit fram (2026). Bedömningarna av hävstång, räckvidd och fönster är ett diskussionsunderlag, inte ShiftSwedens eller IQ Samhällsbyggnads ståndpunkt."
 - Testfilen får aldrig innehålla Gruppens val, Nästa steg, Lärdom, mötes- eller inspelsflikar, projektnamnet i rubriken, interna filhänvisningar eller personliga metadata. `test/testfil.test.mjs` kontrollerar det. En ny ögonblicksbild byggs från Dans senaste logg och ersätter filen; datumet i filnamn och text ändras samtidigt.
-- HP-026 till HP-045 kommer från de fördjupade strategierna för skifte 1, 2 och 3 och den internationella strategin (2026-10-26). Deras bedömningar är preliminära, gjorda av Claude utifrån rapporterna, och står så i Källa; gruppen avgör.
+- HP-026 till HP-045 kommer från de fördjupade strategierna för skifte 1, 2 och 3 och den internationella strategin (2026-10-26). HP-046 till HP-053 kommer från skriften Systemperspektiv för samhällstransformation (IQ Samhällsbyggnads expertråd för strategi, 2026), inlagda 2026-10-27. Bedömningarna är preliminära, gjorda av Claude utifrån källorna, och står så i Källa; gruppen avgör. Namnen på expertrådets ledamöter förs inte in i loggen.
 
 ## Vyer
 

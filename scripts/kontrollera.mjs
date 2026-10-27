@@ -25,7 +25,7 @@ function gaIgenom(dir) {
 gaIgenom(rot);
 const html = fs.readFileSync(path.join(rot, "index.html"), "utf8");
 if (!/Content-Security-Policy[^>]*default-src 'none'/.test(html)) fel.push("index.html: Content Security Policy saknas");
-for (const f of ["img/mickla.png", "vendor/jszip.min.js", "exempel/Testa_sjalv_havstangskartan_2026-10-26.xlsx", "CNAME"]) {
+for (const f of ["img/mickla.png", "vendor/jszip.min.js", "exempel/Testa_sjalv_havstangskartan_2026-10-27.xlsx", "CNAME"]) {
   if (!fs.existsSync(path.join(rot, f))) fel.push(`saknas: publik/${f}`);
 }
 const xlsx = fs.readdirSync(path.join(rot, "exempel"));

@@ -5,7 +5,7 @@ import { SKALA, FONSTER, SKIFTEN, SKIFTEN_LANG, VAL, REDIGERBARA, forslag, motes
 import { lasArbetsbok, skrivArbetsbok, andringar, arAndrad, nyttFilnamn, Filfel } from "./xlsx.js";
 import { byggMejl, mailtoLank, harInnehall as harInspel, MOTTAGARE, AMNE, MAX_LANGD } from "./inspel.js";
 
-const VERSION = "prototyp v0.9";
+const VERSION = "prototyp v0.10";
 const env = { JSZip: window.JSZip, DOMParser: window.DOMParser, XMLSerializer: window.XMLSerializer };
 const MAX_STORLEK = 15 * 1024 * 1024;
 
@@ -113,8 +113,8 @@ async function lasFil(fil) {
 }
 
 // Testa själv: en ögonblicksbild av loggen med inspel från offentliga rapporter, för gäster som vill prova sajten.
-const TESTFIL = "Testa_sjalv_havstangskartan_2026-10-26.xlsx";
-const TESTTEXT = "Alla inspel som finns här är hämtade från rapporter och styrdokument som fanns på shiftsweden.se den 2026-10-26. Bedömningarna av hävstång, räckvidd och fönster är ett diskussionsunderlag, inte ShiftSwedens ståndpunkt.";
+const TESTFIL = "Testa_sjalv_havstangskartan_2026-10-27.xlsx";
+const TESTTEXT = "Alla inspel som finns här är hämtade från rapporter och styrdokument som fanns på shiftsweden.se den 2026-10-26, och från skriften Systemperspektiv för samhällstransformation. Fem nycklar för transformation, som IQ Samhällsbyggnads expertråd för strategi tagit fram (2026). Bedömningarna av hävstång, räckvidd och fönster är ett diskussionsunderlag, inte ShiftSwedens eller IQ Samhällsbyggnads ståndpunkt.";
 
 async function lasTestfil() {
   try {
